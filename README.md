@@ -17,7 +17,7 @@ Ensuite depuis l'onglet [CODE] de votre nouveau Repository, **ouvrez un Codespac
 ---------------------------------------------------
 Séquence 2 : Création du cluster Kubernetes K3d
 ---------------------------------------------------
-Objectif : Créer votre cluster Kubernetes K3d
+Objectif : Créer votre cluster Kubernetes K3d  
 Difficulté : Simple (~5 minutes)
 ---------------------------------------------------
 Vous allez dans cette séquence mettre en place un cluster Kubernetes K3d contenant un master et 2 workers.  
