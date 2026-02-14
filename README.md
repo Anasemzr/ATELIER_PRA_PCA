@@ -136,21 +136,44 @@ exit
 ```
 
 ---------------------------------------------------
-Séquence 4 : 💥 Scénarios de crash possibles 
+Séquence 4 : 💥 Scénarios de crash possibles  
 Difficulté : Facile (~30 minutes)
 ---------------------------------------------------
-✅ **Scénario 1 — Crash du pod**  
-Nous allons dans ce scénario **détruire notre Pod Kubernetes**. Ceci simulera par exemple la supression d'un pod accidentel, un pod qui crash, un pod redémarré, etc..
+✅ **Scénario 1 : PCA — Crash du pod**  
+Nous allons dans ce scénario **détruire notre Pod Kubernetes**. Ceci simulera par exemple la supression d'un pod accidentellement, ou un pod qui crash, ou un pod redémarré, etc..
 
 **Destruction du pod :** Ci-dessous, la cible de notre scénario   
   
 ![Screenshot Actions](scenario1.png)  
 
-Nous perdons donc ici notre application mais pas notre base de données qui est déposée dans le PVC pra-data.  
+Nous perdons donc ici notre application mais pas notre base de données puisque celle-ci est déposée dans le PVC pra-data hors du pod.  
+
+Copier/coller le code suivant dans votre terminal Codespace pour détruire votre pod :
+```
+kubectl -n pra get pods
+```
+Notez le nom de votre pod qui est différent pour tout le monde.  
+Supprimez votre pod (pensez à remplacer <nom-du-pod-flask> par le nom de votre pod).  
+Exemple : kubectl -n pra delete pod flask-7c4fd76955-abcde  
+```
+kubectl -n pra delete pod <nom-du-pod-flask>
+```
+**Vérification de la suppression de votre pod**
+```
+kubectl -n pra get pods
+```
+👉 **Le pod a été reconstruit sous un autre identifiant**.  
+Forward du port 8080 du nouveau service  
+```
+kubectl -n pra port-forward svc/flask 8080:80 >/tmp/web.log 2>&1 &
+```
+Observez le résultat en ligne  
+https://...**/consultation** -> Vous n'avez perdu aucun message.
   
+👉 Kubernetes gère tout seul : Aucun impact sur les données ou sur votre service (PVC conserve la DB et le pod est reconstruit automatiquement) -> **C'est du PCA**. Tout est automatique et il n'y a aucune rupture de service.
 
 
-👉 Kubernetes gère tout seul : Aucun impact sur les données (PVC conserve la DB)
+
 
 
 
