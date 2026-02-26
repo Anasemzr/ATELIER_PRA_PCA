@@ -264,14 +264,80 @@ Difficulté : Moyenne (~2 heures)
 * last_backup_file : nom du dernier backup présent dans /backup
 * backup_age_seconds : âge du dernier backup
 
-![Screenshot Actions](Capture d'écran 2026-02-26 153620.png)  
+![Screenshot Actions](Atelier_1.png)  
 
 ---------------------------------------------------
 ### **Atelier 2 : Choisir notre point de restauration**  
 Aujourd’hui nous restaurobs “le dernier backup”. Nous souhaitons **ajouter la capacité de choisir un point de restauration**.
 
-*..Décrir ici votre procédure de restauration (votre runbook)..*  
-  
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sqlite-restore
+  namespace: pra
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine
+          env:
+            - name: BACKUP_NAME
+              value: ""  # Laisser vide pour restaurer le dernier fichier, ou spécifier le nom du fichier
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -e
+              
+              if [ -z "$BACKUP_NAME" ]; then
+                # Si BACKUP_NAME est vide, restaurer le dernier fichier
+                LATEST=$(ls -t /backup/*.db 2>/dev/null | head -1)
+                if [ -z "$LATEST" ]; then
+                  echo "Erreur: Aucun fichier de backup trouvé dans /backup"
+                  exit 1
+                fi
+                echo "Restauration du dernier backup: $LATEST"
+                cp "$LATEST" /data/app.db
+              else
+                # Sinon, restaurer le fichier spécifié
+                if [ ! -f "/backup/$BACKUP_NAME" ]; then
+                  echo "Erreur: Le fichier de backup /backup/$BACKUP_NAME n'existe pas"
+                  ls -la /backup/
+                  exit 1
+                fi
+                echo "Restauration du backup sélectif: $BACKUP_NAME"
+                cp "/backup/$BACKUP_NAME" /data/app.db
+              fi
+              
+              echo "Restauration terminée avec succès"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pra-data
+        - name: backup
+          persistentVolumeClaim:
+            claimName: pra-backup
+```
+
+Et pour le lancer on a les deux options
+
+# Restaurer le dernier backup (BACKUP_NAME vide)
+```
+kubectl apply -f pra/50-job-restore.yaml
+```
+
+# Restaurer un backup spécifique avec une variable d'environnement
+```
+kubectl set env job/sqlite-restore BACKUP_NAME=app-1708959120.db -n pra
+kubectl apply -f pra/50-job-restore.yaml
+```  
 ---------------------------------------------------
 Evaluation
 ---------------------------------------------------
