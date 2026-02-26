@@ -231,27 +231,28 @@ Faites preuve de pédagogie et soyez clair dans vos explications et procedures d
 **Exercice 1 :**  
 Quels sont les composants dont la perte entraîne une perte de données ?  
   
-*..Répondez à cet exercice ici..*
+Dans cette architecture, la perte de données définitive ne survient que si le PVC pra-data et pra-backup sont détruits simultanément. Le PVC pra-data fait partie de la production donc s'il est supprimé, les données en mémoire disparaissent et d'un autre coté le PVC pra-backup gère le stockage permanent et si lui aussi est supprimé ou corrompu, il n'y a plus de source pour la restauration.
 
 **Exercice 2 :**  
 Expliquez nous pourquoi nous n'avons pas perdu les données lors de la supression du PVC pra-data  
   
-*..Répondez à cet exercice ici..*
+Nous n'avons pas perdu les données grâce à la mise en œuvre d'un Plan de Reprise d'Activité (PRA) avec une stratégie de sauvegarde asynchrone où le CronJob va toutes les minutes copier la base SQL Lite (pra-data) vers un volume de secours (pra-backup). En complément même après avoir supprimé manuellement le volume de production, les fichiers de sauvegarde existaient toujours physiquement sur le volume de backup. Et enfin avec le fichier 50-job-restore.yaml, nous avons manuellement déclenché un processus qui a recopié la dernière version saine du backup vers le nouveau volume de production.
 
 **Exercice 3 :**  
 Quels sont les RTO et RPO de cette solution ?  
   
-*..Répondez à cet exercice ici..*
+Le RPO pour recovery point objective est ici notre CronJob qui s'éxécute chaque minute et nous fait perdre au maximum 60 minutes de status d'échéc.
+Le RTO pour recovery time objective n'est pas encore implémenté automatiquement car il faut faire kubectl apply pour notre job de restauration et la verification du service.
 
 **Exercice 4 :**  
 Pourquoi cette solution (cet atelier) ne peux pas être utilisé dans un vrai environnement de production ? Que manque-t-il ?   
   
-*..Répondez à cet exercice ici..*
+Car cette atélier n'est pas réellement viable car on a tout dans un stockage donc si le server où est le k3d brule alors on perdras tout. Aussi notre base de donnée SQlite n'est pas accèder à distance donc un autre pod ne pourrais pas y accéder facilement. Et enfin on a pas mis de mesure de sécurité.
   
 **Exercice 5 :**  
 Proposez une archtecture plus robuste.   
   
-*..Répondez à cet exercice ici..*
+On peux améliorer cette architecture en prenant une base de donnée externe type Amazon RDS, faire des backups hors site actuel par exemple AWS S3 et enfin déployer le cluster sur plusieurs zone géographique avec un load balancing histoire de garder un pod toujours fonctionnel avec 3 réplica par exemple.
 
 ---------------------------------------------------
 Séquence 6 : Ateliers  
