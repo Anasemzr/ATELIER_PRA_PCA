@@ -10,11 +10,35 @@ spec:
       containers:
         - name: restore
           image: alpine
+          env:
+            - name: BACKUP_NAME
+              value: ""  # Laisser vide pour restaurer le dernier fichier, ou spécifier le nom du fichier
           command: ["/bin/sh","-c"]
           args:
             - |
-              LATEST=$(ls -t /backup/*.db | head -1)
-              cp $LATEST /data/app.db
+              set -e
+              
+              if [ -z "$BACKUP_NAME" ]; then
+                # Si BACKUP_NAME est vide, restaurer le dernier fichier
+                LATEST=$(ls -t /backup/*.db 2>/dev/null | head -1)
+                if [ -z "$LATEST" ]; then
+                  echo "Erreur: Aucun fichier de backup trouvé dans /backup"
+                  exit 1
+                fi
+                echo "Restauration du dernier backup: $LATEST"
+                cp "$LATEST" /data/app.db
+              else
+                # Sinon, restaurer le fichier spécifié
+                if [ ! -f "/backup/$BACKUP_NAME" ]; then
+                  echo "Erreur: Le fichier de backup /backup/$BACKUP_NAME n'existe pas"
+                  ls -la /backup/
+                  exit 1
+                fi
+                echo "Restauration du backup sélectif: $BACKUP_NAME"
+                cp "/backup/$BACKUP_NAME" /data/app.db
+              fi
+              
+              echo "Restauration terminée avec succès"
           volumeMounts:
             - name: data
               mountPath: /data
